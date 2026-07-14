@@ -46,13 +46,19 @@ db.exec(`
     );
 `);
 
-// Tạo tài khoản Demo nếu CSDL trống (Mật khẩu mặc định: 123456)
+// Tạo tài khoản chính thức cho Sở GDĐT Vĩnh Long (Mật khẩu mặc định: 123456)
 const hash = crypto.createHash('sha256').update('123456').digest('hex');
 const userCheck = db.prepare('SELECT count(*) as count FROM users').get();
 if (userCheck.count === 0) {
-    db.prepare("INSERT INTO users (username, password_hash, role, managed_unit) VALUES ('tinhvinhlong', ?, 'ROLE_CAP_TINH', 'Tỉnh Vĩnh Long')").run(hash);
-    db.prepare("INSERT INTO users (username, password_hash, role, managed_unit) VALUES ('sogiaoduc_vinhlong', ?, 'ADMIN_SO', 'Sở GDĐT')").run(hash);
-    db.prepare("INSERT INTO schools (school_name, school_type, management_unit) VALUES ('THCS Phú Hưng', 'THCS', 'Phường Phú Khương')").run();
+    // Tài khoản Admin cấp Tỉnh của Tỉnh Vĩnh Long
+    db.prepare("INSERT INTO users (username, password_hash, role, managed_unit) VALUES ('sogiaoduc_vinhlong', ?, 'ADMIN_SO', 'Sở GDĐT Vĩnh Long')").run(hash);
+    
+    // Tài khoản demo cấp đơn vị trực thuộc (Ví dụ: TP. Vĩnh Long)
+    db.prepare("INSERT INTO users (username, password_hash, role, managed_unit) VALUES ('tp_vinhlong', ?, 'ROLE_XA_PHUONG', 'TP. Vĩnh Long')").run(hash);
+    
+    // Dữ liệu trường học demo
+    db.prepare("INSERT INTO schools (school_name, school_type, management_unit) VALUES ('THPT Chuyên Nguyễn Bỉnh Khiêm', 'THPT', 'Sở GDĐT Vĩnh Long')").run();
+    db.prepare("INSERT INTO schools (school_name, school_type, management_unit) VALUES ('THCS Nguyễn Trường Tộ', 'THCS', 'TP. Vĩnh Long')").run();
 }
 
 // --- CÁC ĐƯỜNG DẪN ĐÓN NHẬN DỮ LIỆU (API) ---
@@ -93,7 +99,7 @@ app.post('/api/scores/submit', (req, res) => {
     res.json({ success: true, message: 'Giám khảo chấm điểm thành công!' });
 });
 
-// 4. API Tự động xếp giải theo thang điểm mới
+// 4. API Tự động xếp giải theo thang điểm
 app.get('/api/results', (req, res) => {
     const results = db.prepare(`
         SELECT p.project_name, s.school_name, AVG(sc.total_score) as avg_score,
@@ -114,4 +120,4 @@ app.get('/api/results', (req, res) => {
 
 // Khởi động server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Phần mềm KHKT Online đang chạy ổn định tại cổng ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Phần mềm KHKT Vĩnh Long đang chạy tại cổng ${PORT}`));
