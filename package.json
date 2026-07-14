@@ -1,0 +1,13 @@
+{
+  "name": "quanly-khkt-online",
+  "version": "1.0.0",
+  "description": "H? th?ng Qu?n lý Cu?c thi KHKT c?p T?nh",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "better-sqlite3": "^11.1.2"
+  }
+}
