@@ -2,98 +2,128 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Hệ Thống KHKT Tỉnh Online</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Cuộc thi KHKT tỉnh Vĩnh Long</title>
     <style>
-        body { font-family: sans-serif; background: #f3f4f6; padding: 30px; margin: 0; }
-        .box { max-width: 600px; margin: 50px auto; background: white; padding: 30px; border-radius: 8px; shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        input, button { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        button { background: #4f46e5; color: white; font-weight: bold; cursor: pointer; border: none; }
-        button:hover { background: #4338ca; }
-        h2 { text-align: center; color: #1f2937; text-transform: uppercase; }
-        .nav { background: #4f46e5; padding: 15px; color: white; display: flex; justify-content: space-between; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #f2f2f2; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; }
+        .header { background: #0056b3; color: white; padding: 20px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .container { max-width: 1000px; margin: 30px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #333; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #28a745; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%; }
+        button:hover { background: #218838; }
+        .dashboard { display: none; }
+        .user-info { background: #e9ecef; padding: 15px; border-radius: 4px; margin-bottom: 20px; font-weight: bold; color: #495057; }
     </style>
 </head>
 <body>
 
-    <!-- MÀN HÌNH ĐĂNG NHẬP -->
-    <div id="loginView" class="box">
-        <h2>Đăng Nhập Hệ Thống KHKT</h2>
-        <input type="text" id="username" placeholder="Tên đăng nhập (Ví dụ: phuongphukhuong)">
-        <input type="password" id="password" placeholder="Mật khẩu">
-        <button onclick="login()">ĐĂNG NHẬP</button>
+    <div class="header">
+        <h2>HỆ THỐNG QUẢN LÝ CUỘC THI KHKT CẤP TỈNH</h2>
+        <h3>SỞ GIÁO DỤC VÀ ĐÀO TẠO TỈNH VĨNH LONG</h3>
     </div>
 
-    <!-- MÀN HÌNH CHÍNH SAU KHI VÀO HỆ THỐNG -->
-    <div id="mainView" style="display:none;">
-        <div class="nav">
-            <span id="userInfo">Đơn vị: </span>
-            <button style="width:auto; margin:0; background:#ef4444;" onclick="logout()">Đăng xuất</button>
-        </div>
-        
-        <div style="max-width: 1000px; margin: 30px auto;">
-            <h2>Bảng Điều Khiển Hồ Sơ & Kết Quả Chấm Thi</h2>
-            <div style="display:flex; gap:10px;">
-                <button onclick="loadProjects()">Xem Danh Sách Hồ Sơ</button>
-                <button style="background:#10b981;" onclick="loadResults()">Xem Bảng Vàng Xếp Giải</button>
+    <div class="container">
+        <!-- Khu vực đăng nhập -->
+        <div id="login-section">
+            <h3 style="text-align: center; color: #0056b3;">ĐĂNG NHẬP HỆ THỐNG</h3>
+            <div class="form-group">
+                <label>Tài khoản:</label>
+                <input type="text" id="username" placeholder="Nhập tài khoản (Ví dụ: sogiaoduc_vinhlong)">
             </div>
-            <div id="contentArea"></div>
+            <div class="form-group">
+                <label>Mật khẩu:</label>
+                <input type="password" id="password" placeholder="Nhập mật khẩu">
+            </div>
+            <button onclick="handleLogin()">Đăng nhập</button>
+            <p id="login-error" style="color: red; text-align: center; margin-top: 15px;"></p>
+        </div>
+
+        <!-- Khu vực bảng điều khiển sau khi đăng nhập -->
+        <div id="dashboard-section" class="dashboard">
+            <div class="user-info" id="user-display"></div>
+            <h4 style="color: #0056b3; border-bottom: 2px solid #0056b3; padding-bottom: 5px;">DANH SÁCH DỰ ÁN KHKT ĐANG QUẢN LÝ</h4>
+            <div id="project-list" style="margin-top: 15px; line-height: 1.6;">
+                <!-- Dữ liệu dự án sẽ tự động load vào đây -->
+                <p style="color: #666; font-style: italic;">Đang tải danh sách hồ sơ cuộc thi...</p>
+            </div>
+            <button onclick="handleLogout()" style="background: #dc3545; margin-top: 30px; width: auto; padding: 10px 20px;">Đăng xuất</button>
         </div>
     </div>
 
     <script>
         let currentUser = null;
 
-        async function login() {
-            const u = document.getElementById('username').value;
-            const p = document.getElementById('password').value;
-            
-            const response = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: u, password: p })
-            });
-            
-            if (response.ok) {
-                currentUser = await response.json();
-                document.getElementById('loginView').style.display = 'none';
-                document.getElementById('mainView').style.display = 'block';
-                document.getElementById('userInfo').innerText = `Đơn vị: ${currentUser.managed_unit} (${currentUser.role})`;[cite: 1]
+        async function handleLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorElement = document.getElementById('login-error');
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    errorElement.innerText = data.error || 'Đăng nhập thất bại!';
+                    return;
+                }
+
+                currentUser = data;
+                errorElement.innerText = '';
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('dashboard-section').style.display = 'block';
+                
+                document.getElementById('user-display').innerText = 
+                    `Xin chào: ${currentUser.username} | Đơn vị: ${currentUser.managed_unit} | Quyền: ${currentUser.role}`;
+
                 loadProjects();
-            } else {
-                alert('Đăng nhập thất bại! Kiểm tra tài khoản: phuongphukhuong, mật khẩu: 123456');[cite: 1]
+
+            } catch (err) {
+                errorElement.innerText = 'Lỗi kết nối máy chủ Render!';
             }
         }
 
         async function loadProjects() {
-            const response = await fetch('/api/projects', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(currentUser)
-            });
-            const data = await response.json();
-            let html = '<h3>Danh sách hồ sơ dự thi</h3><table><tr><th>Tên đề tài</th><th>Trường</th><th>Trạng thái</th></tr>';
-            data.forEach(p => {
-                html += `<tr><td><b>${p.project_name}</b></td><td>${p.school_name}</td><td>${p.status}</td></tr>`;
-            });
-            html += '</table>';
-            document.getElementById('contentArea').innerHTML = html;
+            const projectList = document.getElementById('project-list');
+            try {
+                const response = await fetch('/api/projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role: currentUser.role, managed_unit: currentUser.managed_unit })
+                });
+                const projects = await response.json();
+
+                if(projects.length === 0) {
+                    projectList.innerHTML = '<p style="color: #ffc107; font-weight: bold;">Hiện tại chưa có dự án nào được đăng ký trong hệ thống.</p>';
+                    return;
+                }
+
+                let html = '<table border="1" cellpadding="10" style="width:100%; border-collapse:collapse; border:1px solid #ddd;">';
+                html += '<tr style="background:#f2f2f2;"><th>Tên Dự Án</th><th>Lĩnh Vực</th><th>Trường Đăng Ký</th><th>Trạng Thái</th></tr>';
+                projects.forEach(p => {
+                    html += `<tr><td><b>${p.project_name}</b></td><td>${p.field_name}</td><td>${p.school_name}</td><td style="color:green;">${p.status}</td></tr>`;
+                });
+                html += '</table>';
+                projectList.innerHTML = html;
+
+            } catch (err) {
+                projectList.innerHTML = '<p style="color: red;">Không thể tải danh sách dự án.</p>';
+            }
         }
 
-        async function loadResults() {
-            const response = await fetch('/api/results');
-            const data = await response.json();
-            let html = '<h3>Kết quả chấm thi & Xếp giải tự động</h3><table><tr><th>Tên dự án</th><th>Trường học</th><th>Điểm TB</th><th>Giải thưởng</th></tr>';
-            data.forEach(r => {
-                html += `<tr style="font-weight:bold;"><td>${r.project_name}</td><td>${r.school_name}</td><td style="color:blue;">${r.avg_score || 0}</td><td style="color:red;">${r.award}</td></tr>`;
-            });
-            html += '</table>';
-            document.getElementById('contentArea').innerHTML = html;
+        function handleLogout() {
+            currentUser = null;
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('dashboard-section').style.display = 'none';
         }
-
-        function logout() { window.location.reload(); }
     </script>
 </body>
 </html>
