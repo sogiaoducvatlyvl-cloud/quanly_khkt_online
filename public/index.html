@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Hệ Thống KHKT Tỉnh Online</title>
+    <style>
+        body { font-family: sans-serif; background: #f3f4f6; padding: 30px; margin: 0; }
+        .box { max-width: 600px; margin: 50px auto; background: white; padding: 30px; border-radius: 8px; shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        input, button { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        button { background: #4f46e5; color: white; font-weight: bold; cursor: pointer; border: none; }
+        button:hover { background: #4338ca; }
+        h2 { text-align: center; color: #1f2937; text-transform: uppercase; }
+        .nav { background: #4f46e5; padding: 15px; color: white; display: flex; justify-content: space-between; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+
+    <!-- MÀN HÌNH ĐĂNG NHẬP -->
+    <div id="loginView" class="box">
+        <h2>Đăng Nhập Hệ Thống KHKT</h2>
+        <input type="text" id="username" placeholder="Tên đăng nhập (Ví dụ: phuongphukhuong)">
+        <input type="password" id="password" placeholder="Mật khẩu">
+        <button onclick="login()">ĐĂNG NHẬP</button>
+    </div>
+
+    <!-- MÀN HÌNH CHÍNH SAU KHI VÀO HỆ THỐNG -->
+    <div id="mainView" style="display:none;">
+        <div class="nav">
+            <span id="userInfo">Đơn vị: </span>
+            <button style="width:auto; margin:0; background:#ef4444;" onclick="logout()">Đăng xuất</button>
+        </div>
+        
+        <div style="max-width: 1000px; margin: 30px auto;">
+            <h2>Bảng Điều Khiển Hồ Sơ & Kết Quả Chấm Thi</h2>
+            <div style="display:flex; gap:10px;">
+                <button onclick="loadProjects()">Xem Danh Sách Hồ Sơ</button>
+                <button style="background:#10b981;" onclick="loadResults()">Xem Bảng Vàng Xếp Giải</button>
+            </div>
+            <div id="contentArea"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+
+        async function login() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: u, password: p })
+            });
+            
+            if (response.ok) {
+                currentUser = await response.json();
+                document.getElementById('loginView').style.display = 'none';
+                document.getElementById('mainView').style.display = 'block';
+                document.getElementById('userInfo').innerText = `Đơn vị: ${currentUser.managed_unit} (${currentUser.role})`;[cite: 1]
+                loadProjects();
+            } else {
+                alert('Đăng nhập thất bại! Kiểm tra tài khoản: phuongphukhuong, mật khẩu: 123456');[cite: 1]
+            }
+        }
+
+        async function loadProjects() {
+            const response = await fetch('/api/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(currentUser)
+            });
+            const data = await response.json();
+            let html = '<h3>Danh sách hồ sơ dự thi</h3><table><tr><th>Tên đề tài</th><th>Trường</th><th>Trạng thái</th></tr>';
+            data.forEach(p => {
+                html += `<tr><td><b>${p.project_name}</b></td><td>${p.school_name}</td><td>${p.status}</td></tr>`;
+            });
+            html += '</table>';
+            document.getElementById('contentArea').innerHTML = html;
+        }
+
+        async function loadResults() {
+            const response = await fetch('/api/results');
+            const data = await response.json();
+            let html = '<h3>Kết quả chấm thi & Xếp giải tự động</h3><table><tr><th>Tên dự án</th><th>Trường học</th><th>Điểm TB</th><th>Giải thưởng</th></tr>';
+            data.forEach(r => {
+                html += `<tr style="font-weight:bold;"><td>${r.project_name}</td><td>${r.school_name}</td><td style="color:blue;">${r.avg_score || 0}</td><td style="color:red;">${r.award}</td></tr>`;
+            });
+            html += '</table>';
+            document.getElementById('contentArea').innerHTML = html;
+        }
+
+        function logout() { window.location.reload(); }
+    </script>
+</body>
+</html>
