@@ -1,7 +1,7 @@
 {
   "name": "quanly-khkt-online",
   "version": "1.0.0",
-  "description": "H? th?ng Qu?n lý Cu?c thi KHKT c?p T?nh",
+  "description": "He thong Quan ly Cuoc thi KHKT cap Tinh",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
