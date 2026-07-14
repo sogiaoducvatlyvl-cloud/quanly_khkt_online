@@ -50,8 +50,8 @@ db.exec(`
 const hash = crypto.createHash('sha256').update('123456').digest('hex');
 const userCheck = db.prepare('SELECT count(*) as count FROM users').get();
 if (userCheck.count === 0) {
-    db.prepare("INSERT INTO users (username, password_hash, role, managed_unit) VALUES ('phuongphukhuong', ?, 'ROLE_XA_PHUONG', 'Phường Phú Khương')").run(hash);
-    db.prepare("INSERT INTO users (username, password_hash, role, managed_unit) VALUES ('admin_so', ?, 'ADMIN_SO', 'Sở GDĐT')").run(hash);
+    db.prepare("INSERT INTO users (username, password_hash, role, managed_unit) VALUES ('tinhvinhlong', ?, 'ROLE_CAP_TINH', 'Tỉnh Vĩnh Long')").run(hash);
+    db.prepare("INSERT INTO users (username, password_hash, role, managed_unit) VALUES ('sogiaoduc_vinhlong', ?, 'ADMIN_SO', 'Sở GDĐT')").run(hash);
     db.prepare("INSERT INTO schools (school_name, school_type, management_unit) VALUES ('THCS Phú Hưng', 'THCS', 'Phường Phú Khương')").run();
 }
 
