@@ -7,10 +7,10 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Kh?i t?o file CSDL SQLite ngay tr�n server
+// Khởi tạo file CSDL SQLite ngay trên server
 const db = new database(path.join(__dirname, 'data.db'));
 
-// Kh?i t?o c�c b?ng d? li?u n?u chua c�
+// Khởi tạo các bảng dữ liệu nếu chưa có
 db.exec(`
     CREATE TABLE IF NOT EXISTS schools (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,40 +46,40 @@ db.exec(`
     );
 `);
 
-// T?o t�i kho?n Demo n?u CSDL tr?ng (M?t kh?u m?c d?nh: 123456)
+// Tạo tài khoản Demo nếu CSDL trống (Mật khẩu mặc định: 123456)
 const hash = crypto.createHash('sha256').update('123456').digest('hex');
 const userCheck = db.prepare('SELECT count(*) as count FROM users').get();
 if (userCheck.count === 0) {
-    db.prepare("INSERT INTO users (username, password_hash, role, managed_unit) VALUES ('phuongphukhuong', ?, 'ROLE_XA_PHUONG', 'Phu?ng Ph� Khuong')").run(hash);[cite: 1]
-    db.prepare("INSERT INTO users (username, password_hash, role, managed_unit) VALUES ('admin_so', ?, 'ADMIN_SO', 'S? GD�T')").run(hash);
-    db.prepare("INSERT INTO schools (school_name, school_type, management_unit) VALUES ('THCS Ph� Hung', 'THCS', 'Phu?ng Ph� Khuong')").run(I => {});[cite: 1]
+    db.prepare("INSERT INTO users (username, password_hash, role, managed_unit) VALUES ('phuongphukhuong', ?, 'ROLE_XA_PHUONG', 'Phường Phú Khương')").run(hash);
+    db.prepare("INSERT INTO users (username, password_hash, role, managed_unit) VALUES ('admin_so', ?, 'ADMIN_SO', 'Sở GDĐT')").run(hash);
+    db.prepare("INSERT INTO schools (school_name, school_type, management_unit) VALUES ('THCS Phú Hưng', 'THCS', 'Phường Phú Khương')").run();
 }
 
-// --- C�C �U?NG D?N ��N NH?N D? LI?U (API) ---
+// --- CÁC ĐƯỜNG DẪN ĐÓN NHẬN DỮ LIỆU (API) ---
 
-// 1. API �ang nh?p t? xa
+// 1. API Đăng nhập từ xa
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
     const user = db.prepare('SELECT id, username, role, managed_unit FROM users WHERE username = ? AND password_hash = ?').get(username, passwordHash);
     
-    if (!user) return res.status(400).json({ error: 'T�i kho?n ho?c m?t kh?u kh�ng d�ng!' });
+    if (!user) return res.status(400).json({ error: 'Tài khoản hoặc mật khẩu không đúng!' });
     res.json(user);
 });
 
-// 2. API L?y danh s�ch d? �n (Ph�n quy?n: X�/Phu?ng ch? th?y THCS c?a m�nh)
+// 2. API Lấy danh sách dự án
 app.post('/api/projects', (req, res) => {
     const { role, managed_unit } = req.body;
     let projects;
     if (role === 'ROLE_XA_PHUONG') {
-        projects = db.prepare(`SELECT p.*, s.school_name FROM project_registrations p JOIN schools s ON p.school_id = s.id WHERE s.management_unit = ?`).all(managed_unit);[cite: 1]
+        projects = db.prepare(`SELECT p.*, s.school_name FROM project_registrations p JOIN schools s ON p.school_id = s.id WHERE s.management_unit = ?`).all(managed_unit);
     } else {
         projects = db.prepare(`SELECT p.*, s.school_name FROM project_registrations p JOIN schools s ON p.school_id = s.id`).all();
     }
     res.json(projects);
 });
 
-// 3. API Nh?p di?m (Gi�m kh?o ch?m di?m tr?c ti?p t? xa)
+// 3. API Nhập điểm
 app.post('/api/scores/submit', (req, res) => {
     const { projectId, juryId, report, display, interview } = req.body;
     const total = report * 0.3 + display * 0.3 + interview * 0.4;
@@ -90,19 +90,19 @@ app.post('/api/scores/submit', (req, res) => {
         ON CONFLICT(project_id, jury_id) DO UPDATE SET total_score = excluded.total_score
     `).run(projectId, juryId, report, display, interview, total);
     
-    res.json({ success: true, message: 'Gi�m kh?o ch?m di?m th�nh c�ng!' });
+    res.json({ success: true, message: 'Giám khảo chấm điểm thành công!' });
 });
 
-// 4. API T? d?ng x?p gi?i theo thang di?m m?i
+// 4. API Tự động xếp giải theo thang điểm mới
 app.get('/api/results', (req, res) => {
     const results = db.prepare(`
         SELECT p.project_name, s.school_name, AVG(sc.total_score) as avg_score,
         CASE 
-            WHEN AVG(sc.total_score) >= 90 THEN 'Gi?i Nh?t'
-            WHEN AVG(sc.total_score) >= 80 THEN 'Gi?i Nh�'
-            WHEN AVG(sc.total_score) >= 70 THEN 'Gi?i Ba'
-            WHEN AVG(sc.total_score) >= 60 THEN 'Gi?i Tu'
-            ELSE 'Kh�ng d?t gi?i'
+            WHEN AVG(sc.total_score) >= 90 THEN 'Giải Nhất'
+            WHEN AVG(sc.total_score) >= 80 THEN 'Giải Nhì'
+            WHEN AVG(sc.total_score) >= 70 THEN 'Giải Ba'
+            WHEN AVG(sc.total_score) >= 60 THEN 'Giải Tư'
+            ELSE 'Không đạt giải'
         END as award
         FROM project_registrations p 
         JOIN schools s ON p.school_id = s.id 
@@ -112,6 +112,6 @@ app.get('/api/results', (req, res) => {
     res.json(results);
 });
 
-// Kh?i d?ng server
+// Khởi động server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`?? Ph?n m?m KHKT Online dang ch?y ?n d?nh t?i c?ng ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Phần mềm KHKT Online đang chạy ổn định tại cổng ${PORT}`));
